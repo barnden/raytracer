@@ -1,6 +1,5 @@
 #pragma once
 
-#include <cassert>
 #include <cmath>
 #include <concepts>
 #include <cstddef>
@@ -8,10 +7,7 @@
 #include <ostream>
 #include <utility>
 
-#define ASSERT_NOT_REACHED assert(false);
-
-template <typename T>
-concept Numeric = std::convertible_to<T, std::size_t>;
+#include "Concepts.h"
 
 template <std::size_t N, Numeric T>
 class Vec {
@@ -226,6 +222,7 @@ public:
 
         return *this;
     }
+
 
     __attribute__((flatten)) friend auto inline normalize(Vec<N, T> const& vec)
     {
