@@ -6,13 +6,14 @@
 #include <cstddef>
 
 #include <ostream>
+#include <utility>
 
 #define ASSERT_NOT_REACHED assert(false);
 
 template <typename T>
 concept Numeric = std::convertible_to<T, std::size_t>;
 
-template <size_t N, Numeric T>
+template <std::size_t N, Numeric T>
 class Vec {
 public:
     T x;
@@ -24,6 +25,8 @@ public:
     T& g = y;
     T& b = z;
     T& a = w;
+
+    T* refs[4] = { &x, &y, &z, &w };
 
     using Type = T;
 
@@ -57,34 +60,42 @@ public:
         , z(c)
         , w(d) {};
 
+    auto inline const& operator[](auto idx) const
+    {
+        if (idx >= N)
+            throw "Index exceeds vector contents";
+
+        return *refs[idx];
+    }
+
+    auto inline& operator[](auto idx)
+    {
+        if (idx >= N)
+            throw "Index exceeds vector contents";
+
+        return *refs[idx];
+    }
+
     template <typename F>
     auto inline constexpr VectorOperation(F&& func, Vec<N, T> const& rhs)
     {
-        func(x, rhs.x);
-
-        if constexpr (N >= 2)
-            func(y, rhs.y);
-
-        if constexpr (N >= 3)
-            func(z, rhs.z);
-
-        if constexpr (N >= 4)
-            func(w, rhs.w);
+        auto& self = *this;
+        [&]<std::size_t... I>(std::index_sequence<I...>)
+        {
+            (func(self[I], rhs[I]), ...);
+        }
+        (std::make_index_sequence<N> {});
     }
 
     template <typename F, Numeric Scalar>
     auto inline constexpr VectorOperation(F&& func, Scalar const& rhs)
     {
-        func(x, rhs);
-
-        if constexpr (N >= 2)
-            func(y, rhs);
-
-        if constexpr (N >= 3)
-            func(z, rhs);
-
-        if constexpr (N >= 4)
-            func(w, rhs);
+        auto& self = *this;
+        [&]<std::size_t... I>(std::index_sequence<I...>)
+        {
+            (func(self[I], rhs), ...);
+        }
+        (std::make_index_sequence<N> {});
     }
 
     auto inline operator*=(auto const& rhs)
