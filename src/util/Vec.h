@@ -52,9 +52,14 @@ public:
 
         return *refs[idx];
     }
-
-    auto inline& operator[](auto idx) { return at(idx); }
-    auto inline const& operator[](auto idx) const { return std::as_const(at(idx)); }
+    auto inline& operator[](auto idx)
+    {
+        return at(idx);
+    }
+    auto inline const& operator[](auto idx) const
+    {
+        return std::as_const(at(idx));
+    }
 
     template <typename F>
     auto inline constexpr for_each(F&& func)
@@ -64,6 +69,8 @@ public:
             (func(at(I), I), ...);
         }
         (std::make_index_sequence<N> {});
+
+        return *this;
     }
 
     template <typename F>
@@ -78,30 +85,22 @@ public:
 
     auto inline operator=(auto const& rhs)
     {
-        for_each([&rhs](T& a, auto idx) { a = rhs[idx]; });
-
-        return *this;
+        return for_each([&rhs](T& a, auto idx) { a = rhs[idx]; });
     }
 
     auto inline operator*=(auto const& rhs)
     {
-        for_each([&rhs](T& a, auto idx) {
+        return for_each([&rhs](T& a, auto idx) {
             if constexpr (is_same_cv<decltype(rhs), Vec<N, T>>::value)
                 a *= rhs[idx];
             else
                 a *= rhs;
         });
-
-        return *this;
     }
 
     friend auto inline operator*(Vec<N, T> const& lhs, auto const& rhs)
     {
-        auto result = lhs;
-
-        result *= rhs;
-
-        return result;
+        return Vec<N, T> { lhs } *= rhs;
     }
 
     template <Numeric Scalar>
@@ -112,70 +111,48 @@ public:
 
     auto inline operator/=(auto const& rhs)
     {
-        for_each([&rhs](T& a, auto idx) {
+        return for_each([&rhs](T& a, auto idx) {
             if constexpr (is_same_cv<decltype(rhs), Vec<N, T>>::value)
                 a /= rhs[idx];
             else
                 a /= rhs;
         });
-
-        return *this;
     }
 
     friend auto inline operator/(Vec<N, T> const& lhs, auto const& rhs)
     {
-        auto result = lhs;
-
-        result /= rhs;
-
-        return result;
+        return Vec<N, T> { lhs } /= rhs;
     }
 
     template <Numeric Scalar>
     friend auto inline operator/(Scalar const& lhs, Vec<N, T> const& rhs)
     {
-        auto result = Vec<N, T>(static_cast<T>(lhs));
-
-        result /= rhs;
-
-        return result;
+        return Vec<N, T> { static_cast<T>(lhs) } /= rhs;
     }
 
     auto inline operator+=(Vec<N, T> const& rhs)
     {
-        for_each([&rhs](T& a, auto idx) { a += rhs[idx]; });
-
-        return *this;
+        return for_each([&rhs](T& a, auto idx) { a += rhs[idx]; });
     }
 
     friend auto inline operator+(auto const& lhs, auto const& rhs)
     {
-        auto result = lhs;
-
-        result += rhs;
-
-        return result;
+        return Vec<N, T> { lhs } += rhs;
     }
 
     auto inline operator-=(Vec<N, T> const& rhs)
     {
-        for_each([&rhs](T& a, auto idx) { a -= rhs[idx]; });
-
-        return *this;
+        return for_each([&rhs](T& a, auto idx) { a -= rhs[idx]; });
     }
 
     friend auto inline operator-(auto const& lhs, auto const& rhs)
     {
-        auto result = lhs;
-
-        result -= rhs;
-
-        return result;
+        return Vec<N, T> { lhs } -= rhs;
     }
 
     __attribute__((flatten)) friend T inline dot(Vec<N, T> const& a, Vec<N, T> const& b)
     {
-        auto sum = T{};
+        auto sum = T {};
 
         a.for_each_const([&](T const& val, auto idx) { sum += val * b[idx]; });
 
@@ -188,22 +165,19 @@ public:
         return static_cast<U>(std::sqrt(dot(*this, *this)));
     }
 
-    T inline magnitude() const { return magnitude<T>(); }
+    T inline magnitude() const
+    {
+        return magnitude<T>();
+    }
 
     auto inline normalize()
     {
-        *this /= magnitude<double>();
-
-        return *this;
+        return *this /= magnitude<double>();
     }
 
     friend auto inline normalize(Vec<N, T> const& vec)
     {
-        auto result = vec;
-
-        result.normalize();
-
-        return result;
+        return Vec<N, T> { vec }.normalize();
     }
 
     __attribute__((flatten)) friend std::ostream& operator<<(std::ostream& stream, Vec<N, T> const& vec)
