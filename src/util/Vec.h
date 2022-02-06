@@ -27,11 +27,6 @@ public:
 
     using Type = T;
 
-    // Hint for compiler to automatically deduce T from parameters
-    Vec(T...) {
-        ASSERT_NOT_REACHED
-    }
-
     Vec()
         : x(0)
         , y(0)
@@ -133,7 +128,11 @@ public:
     template <Numeric Scalar>
     __attribute__((flatten)) friend auto inline operator/(Scalar const& lhs, Vec<N, T> const& rhs)
     {
-        return rhs / lhs;
+        auto result = Vec<N, T>(static_cast<T>(lhs));
+
+        result /= rhs;
+
+        return result;
     }
 
     auto inline operator+=(Vec<N, T> const& rhs)
