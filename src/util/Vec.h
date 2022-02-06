@@ -24,39 +24,28 @@ public:
 
     T* refs[4] = { &x, &y, &z, &w };
 
-    using Type = T;
-
-    Vec()
-        : x(0)
-        , y(0)
-        , z(0)
-        , w(0) {};
-
-    Vec(T a)
-        : x(a)
-        , y(a)
-        , z(a)
-        , w(a) {};
-
-    Vec(T a, T b)
-        : x(a)
-        , y(b)
-        , z(0)
-        , w(0) {};
-
-    Vec(T a, T b, T c)
-        : x(a)
-        , y(b)
-        , z(c)
-        , w(0) {};
-
     Vec(T a, T b, T c, T d)
         : x(a)
         , y(b)
         , z(c)
         , w(d) {};
 
-    auto inline const& operator[](auto idx) const
+    Vec()
+        : Vec(0, 0, 0, 0) {};
+
+    Vec(T a, T b, T c)
+        : Vec(a, b, c, 0) {};
+
+    Vec(T a, T b)
+        : Vec(a, b, 0, 0) {};
+
+    Vec(T a)
+        : Vec(a, a, a, a) {};
+
+    Vec(Vec const& rhs)
+        : Vec(rhs.x, rhs.y, rhs.z, rhs.w) {};
+
+    auto inline& at(auto idx) const
     {
         if (idx >= N)
             throw "Index exceeds vector contents";
@@ -64,44 +53,49 @@ public:
         return *refs[idx];
     }
 
-    auto inline& operator[](auto idx)
-    {
-        if (idx >= N)
-            throw "Index exceeds vector contents";
+    auto inline& operator[](auto idx) { return at(idx); }
+    auto inline const& operator[](auto idx) const { return std::as_const(at(idx)); }
 
-        return *refs[idx];
+    template <typename F>
+    auto inline constexpr for_each(F&& func)
+    {
+        [&]<std::size_t... I>(std::index_sequence<I...>)
+        {
+            (func(at(I), I), ...);
+        }
+        (std::make_index_sequence<N> {});
     }
 
     template <typename F>
-    auto inline constexpr VectorOperation(F&& func, Vec<N, T> const& rhs)
+    auto inline constexpr for_each_const(F&& func) const
     {
-        auto& self = *this;
         [&]<std::size_t... I>(std::index_sequence<I...>)
         {
-            (func(self[I], rhs[I]), ...);
+            (func(std::as_const(at(I)), I), ...);
         }
         (std::make_index_sequence<N> {});
     }
 
-    template <typename F, Numeric Scalar>
-    auto inline constexpr VectorOperation(F&& func, Scalar const& rhs)
+    auto inline operator=(auto const& rhs)
     {
-        auto& self = *this;
-        [&]<std::size_t... I>(std::index_sequence<I...>)
-        {
-            (func(self[I], rhs), ...);
-        }
-        (std::make_index_sequence<N> {});
-    }
-
-    auto inline operator*=(auto const& rhs)
-    {
-        VectorOperation([](T& a, T const& b) { a *= b; }, rhs);
+        for_each([&rhs](T& a, auto idx) { a = rhs[idx]; });
 
         return *this;
     }
 
-    __attribute__((flatten)) friend auto inline operator*(Vec<N, T> const& lhs, auto const& rhs)
+    auto inline operator*=(auto const& rhs)
+    {
+        for_each([&rhs](T& a, auto idx) {
+            if constexpr (is_same_cv<decltype(rhs), Vec<N, T>>::value)
+                a *= rhs[idx];
+            else
+                a *= rhs;
+        });
+
+        return *this;
+    }
+
+    friend auto inline operator*(Vec<N, T> const& lhs, auto const& rhs)
     {
         auto result = lhs;
 
@@ -111,19 +105,24 @@ public:
     }
 
     template <Numeric Scalar>
-    __attribute__((flatten)) friend auto inline operator*(Scalar const& lhs, Vec<N, T> const& rhs)
+    friend auto inline operator*(Scalar const& lhs, Vec<N, T> const& rhs)
     {
         return rhs * lhs;
     }
 
     auto inline operator/=(auto const& rhs)
     {
-        VectorOperation([](T& a, T const& b) { a /= b; }, rhs);
+        for_each([&rhs](T& a, auto idx) {
+            if constexpr (is_same_cv<decltype(rhs), Vec<N, T>>::value)
+                a /= rhs[idx];
+            else
+                a /= rhs;
+        });
 
         return *this;
     }
 
-    __attribute__((flatten)) friend auto inline operator/(Vec<N, T> const& lhs, auto const& rhs)
+    friend auto inline operator/(Vec<N, T> const& lhs, auto const& rhs)
     {
         auto result = lhs;
 
@@ -133,7 +132,7 @@ public:
     }
 
     template <Numeric Scalar>
-    __attribute__((flatten)) friend auto inline operator/(Scalar const& lhs, Vec<N, T> const& rhs)
+    friend auto inline operator/(Scalar const& lhs, Vec<N, T> const& rhs)
     {
         auto result = Vec<N, T>(static_cast<T>(lhs));
 
@@ -144,21 +143,12 @@ public:
 
     auto inline operator+=(Vec<N, T> const& rhs)
     {
-        x += rhs.x;
-
-        if constexpr (N >= 2)
-            y += rhs.y;
-
-        if constexpr (N >= 3)
-            z += rhs.z;
-
-        if constexpr (N >= 4)
-            w += rhs.w;
+        for_each([&rhs](T& a, auto idx) { a += rhs[idx]; });
 
         return *this;
     }
 
-    __attribute__((flatten)) friend auto inline operator+(auto const& lhs, auto const& rhs)
+    friend auto inline operator+(auto const& lhs, auto const& rhs)
     {
         auto result = lhs;
 
@@ -169,21 +159,12 @@ public:
 
     auto inline operator-=(Vec<N, T> const& rhs)
     {
-        x -= rhs.x;
-
-        if constexpr (N >= 2)
-            y -= rhs.y;
-
-        if constexpr (N >= 3)
-            z -= rhs.z;
-
-        if constexpr (N >= 4)
-            w -= rhs.w;
+        for_each([&rhs](T& a, auto idx) { a -= rhs[idx]; });
 
         return *this;
     }
 
-    __attribute__((flatten)) friend auto inline operator-(auto const& lhs, auto const& rhs)
+    friend auto inline operator-(auto const& lhs, auto const& rhs)
     {
         auto result = lhs;
 
@@ -192,39 +173,31 @@ public:
         return result;
     }
 
-    __attribute__((flatten)) friend T inline dot(Vec<N, T> a, Vec<N, T> b)
+    __attribute__((flatten)) friend T inline dot(Vec<N, T> const& a, Vec<N, T> const& b)
     {
-        auto sum = a.x * b.x;
+        auto sum = T{};
 
-        if constexpr (N >= 2)
-            sum += a.y * b.y;
-
-        if constexpr (N >= 3)
-            sum += a.z * b.z;
-
-        if constexpr (N >= 4)
-            sum += a.w * b.w;
+        a.for_each_const([&](T const& val, auto idx) { sum += val * b[idx]; });
 
         return sum;
     }
 
     template <typename U>
-    __attribute__((flatten)) U inline magnitude() const
+    U inline magnitude() const
     {
         return static_cast<U>(std::sqrt(dot(*this, *this)));
     }
 
-    __attribute__((flatten)) T inline magnitude() const { return magnitude<T>(); }
+    T inline magnitude() const { return magnitude<T>(); }
 
-    __attribute__((flatten)) auto inline normalize()
+    auto inline normalize()
     {
         *this /= magnitude<double>();
 
         return *this;
     }
 
-
-    __attribute__((flatten)) friend auto inline normalize(Vec<N, T> const& vec)
+    friend auto inline normalize(Vec<N, T> const& vec)
     {
         auto result = vec;
 
@@ -235,16 +208,12 @@ public:
 
     __attribute__((flatten)) friend std::ostream& operator<<(std::ostream& stream, Vec<N, T> const& vec)
     {
-        stream << vec.x;
+        vec.for_each_const([&](T const& val, auto idx) {
+            if (idx > 0)
+                stream << ", ";
 
-        if constexpr (N >= 2)
-            stream << ", " << vec.y;
-
-        if constexpr (N >= 3)
-            stream << ", " << vec.z;
-
-        if constexpr (N >= 4)
-            stream << ", " << vec.w;
+            stream << val;
+        });
 
         return stream;
     }
