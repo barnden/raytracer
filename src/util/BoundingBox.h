@@ -19,10 +19,10 @@ public:
         : m_min(min)
         , m_max(max) {};
 
-    bool Intersect(Ray const& ray) const
+    __attribute__((flatten)) bool find_intersection(Ray const& ray) const
     {
-        auto min = (m_min - ray.Origin()) / ray.Direction();
-        auto max = (m_max - ray.Origin()) / ray.Direction();
+        auto min = (m_min - ray.get_origin()) / ray.get_direction();
+        auto max = (m_max - ray.get_origin()) / ray.get_direction();
 
         auto tmin = std::min(min.x, max.x);
         auto tmax = std::max(min.x, max.x);

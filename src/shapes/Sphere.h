@@ -14,15 +14,15 @@ public:
         , m_center(center)
         , m_radius(radius) {};
 
-    Vec3<double> GetNormal(Vec3<double> point) const override
+    Vec3<double> get_normal(Vec3<double> point) const override
     {
         return normalize(point - m_center);
     }
 
-    double Intersect(Ray ray, double min, double max) const override
+    __attribute__((flatten)) double find_intersection(Ray ray, double min, double max) const override
     {
-        auto oc = ray.Origin() - m_center;
-        auto b = dot(ray.Direction(), oc);
+        auto oc = ray.get_origin() - m_center;
+        auto b = dot(ray.get_direction(), oc);
         auto c = dot(oc, oc) - m_radius * m_radius;
 
         auto discriminant = b * b - c;

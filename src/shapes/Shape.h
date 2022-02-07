@@ -17,11 +17,11 @@ public:
         : m_bounding_box(bounding_box)
         , m_material(material) {};
 
-    auto const& GetBoundingBox() const { return m_bounding_box; }
-    auto const& GetMaterial() const { return m_material; }
+    auto const& get_bounding_box() const { return m_bounding_box; }
+    auto const& get_material() const { return m_material; }
 
-    void SetBoundingBox(BoundingBox&& bounding_box) { m_bounding_box = std::move(bounding_box); }
+    void set_bounding_box(BoundingBox&& bounding_box) { m_bounding_box = std::move(bounding_box); }
 
-    virtual Vec3<double> GetNormal(Vec3<double> point) const = 0;
-    virtual double Intersect(Ray ray, double min, double max) const = 0;
+    virtual Vec3<double> get_normal(Vec3<double> point) const = 0;
+    virtual double find_intersection(Ray ray, double min, double max) const = 0;
 };

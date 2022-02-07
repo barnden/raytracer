@@ -60,14 +60,14 @@ public:
         m_focal_plane_origin = m_focal_plane_center - (((m_focal_plane_width / 2.) * m_u) + ((m_focal_plane_height / 2.) * m_v));
     }
 
-    void RenderChunk(Scene const& scene, std::size_t u, std::size_t v, auto& pixels) const
+    __attribute__((flatten)) void render_chunk(Scene const& scene, std::size_t u, std::size_t v, auto& pixels) const
     {
         for (auto i = u << 6; i < (u + 1) << 6; i++)
             for (auto j = v << 6; j < (v + 1) << 6; j++) {
                 auto look_at = m_focal_plane_origin + (.5 + i) * m_pixel_width * m_u + (.5 + j) * m_pixel_width * m_v;
                 auto direction = normalize(look_at - m_eye);
 
-                auto color = ComputeRay(scene, { look_at, direction }, 0., std::numeric_limits<double>::infinity(), 0);
+                auto color = compute_ray_color(scene, { look_at, direction }, 0., std::numeric_limits<double>::infinity(), 0);
                 auto pixel_idx = (m_viewport_height - (j + 1)) * m_viewport_width + i;
 
                 color.for_each([&](auto& a, auto idx) {
@@ -76,28 +76,28 @@ public:
             }
     }
 
-    auto Render(Scene const& scene) const
+    __attribute__((flatten)) auto render(Scene const& scene) const
     {
         std::vector<Vec3<uint8_t>> pixels(m_viewport_width * m_viewport_height, Vec3<uint8_t> { 0 });
 
         for (auto u = 0uz; u < (m_viewport_width >> 6); u++)
             for (auto v = 0uz; v < (m_viewport_height >> 6); v++)
-                RenderChunk(scene, u, v, pixels);
+                render_chunk(scene, u, v, pixels);
 
         return pixels;
     }
 
-    Vec3<double> ComputeRay(Scene const& scene, Ray ray, double min, double max, int depth) const
+    __attribute__((flatten)) Vec3<double> compute_ray_color(Scene const& scene, Ray ray, double min, double max, int depth) const
     {
         auto record = Record {};
 
-        if (depth == RAYTRACER_MAX_RECURSION_DEPTH || !scene.Hit(ray, min, max, record))
+        if (depth == RAYTRACER_MAX_RECURSION_DEPTH || !scene.find_intersection(ray, min, max, record))
             return { 0. };
 
         auto color = record.m_material.ka;
-        auto E = normalize(ray.Origin() - record.m_point);
+        auto E = normalize(ray.get_origin() - record.m_point);
 
-        for (auto&& light : scene.Lights()) {
+        for (auto&& light : scene.get_lights()) {
             auto light_direction = light->m_position - record.m_point;
             auto light_time = light_direction.magnitude();
 
@@ -107,7 +107,7 @@ public:
             auto shadow_record = Record {};
 
             // There is an occluder between light and this point; continue to next light source.
-            if (scene.Hit(shadow_ray, RAYTRACER_EPSILON, light_time, shadow_record))
+            if (scene.find_intersection(shadow_ray, RAYTRACER_EPSILON, light_time, shadow_record))
                 continue;
 
             // Phong reflection model for lighting
@@ -125,8 +125,8 @@ public:
             return color;
 
         // Reflection ray originates from point of intersection of ray and object
-        auto reflection_ray = Ray(record.m_point, normalize(ray.Direction() - 2. * dot(ray.Direction(), record.m_normal) * record.m_normal));
-        auto reflected_color = record.m_material.km * ComputeRay(scene, reflection_ray, RAYTRACER_EPSILON, std::numeric_limits<double>::infinity(), depth + 1);
+        auto reflection_ray = Ray(record.m_point, normalize(ray.get_direction() - 2. * dot(ray.get_direction(), record.m_normal) * record.m_normal));
+        auto reflected_color = record.m_material.km * compute_ray_color(scene, reflection_ray, RAYTRACER_EPSILON, std::numeric_limits<double>::infinity(), depth + 1);
 
         // Add color and reflected color; clamp to values between [0, 1].
         color.for_each([&reflected_color](auto& v, auto idx) {

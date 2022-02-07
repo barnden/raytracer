@@ -26,7 +26,7 @@ public:
         , m_major_radius(major_radius)
         , m_minor_radius(minor_radius) {};
 
-    Vec3<double> GetNormal(Vec3<double> point) const override
+    Vec3<double> get_normal(Vec3<double> point) const override
     {
         // Torii eqn. f(x, y, z) = (x^2 + y^2 + z^2 + R^2 - r^2)^2 - 4R^2 (x^2 + y^2)
         auto point_difference = point - m_center;
@@ -38,7 +38,7 @@ public:
                                         point_difference.z });
     }
 
-    __attribute__((flatten)) double SmallestRealQuarticRoot(std::complex<double> a, std::complex<double> b, std::complex<double> c, std::complex<double> d) const
+    __attribute__((flatten)) double find_smallest_real_quartic_root(std::complex<double> a, std::complex<double> b, std::complex<double> c, std::complex<double> d) const
     {
         auto P = std::complex<double>(1.);
         auto Q = std::complex<double>(.4, .9);
@@ -91,21 +91,21 @@ public:
         return smallest_root;
     }
 
-    __attribute__((flatten)) double Intersect(Ray ray, double min, double max) const override
+    __attribute__((flatten)) double find_intersection(Ray ray, double min, double max) const override
     {
         // From: http://cosinekitty.com/raytrace/chapter13_torus.html
 
-        auto const P = ray.Origin() - m_center;
+        auto const P = ray.get_origin() - m_center;
         auto const T = 4. * m_major_radius * m_major_radius;
-        auto const G = T * (ray.Direction().x * ray.Direction().x + ray.Direction().y * ray.Direction().y);
-        auto const H = 2. * T * (P.x * ray.Direction().x + P.y * ray.Direction().y);
+        auto const G = T * (ray.get_direction().x * ray.get_direction().x + ray.get_direction().y * ray.get_direction().y);
+        auto const H = 2. * T * (P.x * ray.get_direction().x + P.y * ray.get_direction().y);
         auto const I = T * (P.x * P.x + P.y * P.y);
-        auto const J = dot(ray.Direction(), ray.Direction());
-        auto const K = 2. * dot(ray.Direction(), P);
+        auto const J = dot(ray.get_direction(), ray.get_direction());
+        auto const K = 2. * dot(ray.get_direction(), P);
         auto const L = dot(P, P) + m_major_radius * m_major_radius - m_minor_radius * m_minor_radius;
         auto const M = 1. / (J * J);
 
-        auto root = SmallestRealQuarticRoot(
+        auto root = find_smallest_real_quartic_root(
             M * (2 * J * K),
             M * (2 * J * L + K * K - G),
             M * (2 * K * L - H),

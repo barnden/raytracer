@@ -14,14 +14,14 @@ public:
         , m_center(center)
         , m_normal(normal) {};
 
-    Vec3<double> GetNormal(Vec3<double>) const override
+    Vec3<double> get_normal(Vec3<double>) const override
     {
         return m_normal;
     }
 
-    double Intersect(Ray ray, double min, double max) const override
+    __attribute__((flatten)) double find_intersection(Ray ray, double min, double max) const override
     {
-        auto const val = dot(m_center - ray.Origin(), m_normal) / dot(m_normal, ray.Direction());
+        auto const val = dot(m_center - ray.get_origin(), m_normal) / dot(m_normal, ray.get_direction());
 
         return std::min(std::max(val, min), max);
     }

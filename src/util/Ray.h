@@ -12,7 +12,7 @@ public:
         : m_origin(origin)
         , m_direction(direction) {};
 
-    auto const& Origin() const { return m_origin; }
-    auto const& Direction() const { return m_direction; }
-    auto GetPoint(double time) const { return m_origin + m_direction * time; }
+    auto const& get_origin() const { return m_origin; }
+    auto const& get_direction() const { return m_direction; }
+    auto get_point(double time) const { return m_origin + m_direction * time; }
 };

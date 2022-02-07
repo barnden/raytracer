@@ -35,7 +35,7 @@ public:
             std::max(m_v0.z, std::max(m_v1.z, m_v2.z))
         };
 
-        SetBoundingBox(std::move(BoundingBox(min_point, max_point)));
+        set_bounding_box(std::move(BoundingBox(min_point, max_point)));
         m_normal = normalize(cross(m_E1, m_E2));
 
         // If the determinant of the 3x3 matrix of (v0, v1, v2) is negative
@@ -45,22 +45,22 @@ public:
             m_normal *= -1.;
     }
 
-    Vec3<double> GetNormal(Vec3<double>) const override
+    Vec3<double> get_normal(Vec3<double>) const override
     {
         return m_normal;
     }
 
-    double Intersect(Ray ray, double min, double max) const override
+    __attribute__((flatten)) double find_intersection(Ray ray, double min, double max) const override
     {
         // Möller–Trumbore intersection algorithm
-        auto S = ray.Origin() - m_v0;
-        auto S1 = cross(ray.Direction(), m_E2);
+        auto S = ray.get_origin() - m_v0;
+        auto S1 = cross(ray.get_direction(), m_E2);
         auto S2 = cross(S, m_E1);
 
         auto invS1E1 = 1. / dot(S1, m_E1);
 
         auto b1 = invS1E1 * dot(S1, S);
-        auto b2 = invS1E1 * dot(S2, ray.Direction());
+        auto b2 = invS1E1 * dot(S2, ray.get_direction());
 
         if (b1 + b2 > 1. || b1 < 0. || b2 < 0.)
             return max;
