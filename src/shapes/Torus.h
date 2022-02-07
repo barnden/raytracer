@@ -5,8 +5,12 @@
 #include "../util/Ray.h"
 #include "Shape.h"
 
-#ifndef RAYTRACER_TORUS_PRECISION
-#    define RAYTRACER_TORUS_PRECISION 0.000005
+#ifndef RAYTRACER_TORUS_THRESHOLD
+#    define RAYTRACER_TORUS_THRESHOLD 0.00001
+#endif
+
+#ifndef RAYTRACER_TORUS_EPSILON
+#    define RAYTRACER_TORUS_EPSILON RAYTRACER_TORUS_THRESHOLD
 #endif
 
 class Torus : public Shape {
@@ -34,7 +38,7 @@ public:
                                         point_difference.z });
     }
 
-    __attribute__((flatten)) std::complex<double> SmallestRealQuarticRoot(std::complex<double> a, std::complex<double> b, std::complex<double> c, std::complex<double> d) const
+    __attribute__((flatten)) double SmallestRealQuarticRoot(std::complex<double> a, std::complex<double> b, std::complex<double> c, std::complex<double> d) const
     {
         auto P = std::complex<double>(1.);
         auto Q = std::complex<double>(.4, .9);
@@ -42,12 +46,12 @@ public:
         auto S = R * Q;
 
         std::complex<double> Phat, Qhat, Rhat, Shat;
-        double smallest_root;
+        double smallest_root = std::numeric_limits<double>::infinity();
 
         auto static const is_within_threshold = [](auto const& a, auto const& b) {
-            return std::abs(a - b) < RAYTRACER_TORUS_PRECISION;
+            return std::abs(a - b) < RAYTRACER_TORUS_THRESHOLD;
         };
-        auto static const evaluate_polynomial = [a, b, c, d](auto const& x) {
+        auto static const evaluate_polynomial = [&a, &b, &c, &d](auto const& x) {
             return d + x * (c + x * (b + x * (a + x)));
         };
         auto static const get_next_point = [](auto const& x, auto const& p, auto const& q, auto const& r) {
@@ -72,16 +76,16 @@ public:
             S = Shat;
         }
 
-        if (Phat.imag() < RAYTRACER_TORUS_PRECISION)
+        if (std::abs(Phat.imag()) < RAYTRACER_TORUS_EPSILON)
             smallest_root = std::min(smallest_root, Phat.real());
 
-        if (Qhat.imag() < RAYTRACER_TORUS_PRECISION)
+        if (std::abs(Qhat.imag()) < RAYTRACER_TORUS_EPSILON)
             smallest_root = std::min(smallest_root, Qhat.real());
 
-        if (Rhat.imag() < RAYTRACER_TORUS_PRECISION)
+        if (std::abs(Rhat.imag()) < RAYTRACER_TORUS_EPSILON)
             smallest_root = std::min(smallest_root, Rhat.real());
 
-        if (Shat.imag() < RAYTRACER_TORUS_PRECISION)
+        if (std::abs(Shat.imag()) < RAYTRACER_TORUS_EPSILON)
             smallest_root = std::min(smallest_root, Shat.real());
 
         return smallest_root;
@@ -101,8 +105,13 @@ public:
         auto const L = dot(P, P) + m_major_radius * m_major_radius - m_minor_radius * m_minor_radius;
         auto const M = 1. / (J * J);
 
-        auto root = SmallestRealQuarticRoot(2. * J * K, M * (2 * J * L + K * K - G), M * (2. * K * L - H), M * (L * L - I));
+        auto root = SmallestRealQuarticRoot(
+            M * (2 * J * K),
+            M * (2 * J * L + K * K - G),
+            M * (2 * K * L - H),
+            M * (L * L - I)
+        );
 
-        return std::min(std::max(root.real(), min), max);
+        return std::min(std::max(root, min), max);
     }
 };
