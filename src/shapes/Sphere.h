@@ -16,7 +16,7 @@ public:
 
     Vec3<double> GetNormal(Vec3<double> point) const override
     {
-        return normalize(m_center - point);
+        return normalize(point - m_center);
     }
 
     double Intersect(Ray ray, double min, double max) const override
