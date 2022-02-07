@@ -35,7 +35,7 @@ public:
             std::max(m_v0.z, std::max(m_v1.z, m_v2.z))
         };
 
-        m_bounding_box = BoundingBox(min_point, max_point);
+        SetBoundingBox(std::move(BoundingBox(min_point, max_point)));
         m_normal = normalize(cross(m_E1, m_E2));
 
         // If the determinant of the 3x3 matrix of (v0, v1, v2) is negative
