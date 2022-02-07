@@ -17,10 +17,10 @@ public:
     T z;
     T w;
 
-    T& r = x;
-    T& g = y;
-    T& b = z;
-    T& a = w;
+    T& r;
+    T& g;
+    T& b;
+    T& a;
 
     T* refs[4] = { &x, &y, &z, &w };
 
@@ -28,7 +28,11 @@ public:
         : x(a)
         , y(b)
         , z(c)
-        , w(d) {};
+        , w(d)
+        , r(x)
+        , g(y)
+        , b(z)
+        , a(w) {};
 
     Vec()
         : Vec(0, 0, 0, 0) {};
@@ -83,9 +87,14 @@ public:
         (std::make_index_sequence<N> {});
     }
 
-    auto inline operator=(auto const& rhs)
+    Vec<N, T>& operator=(Vec<N, T> const& rhs)
     {
-        return for_each([&rhs](T& a, auto idx) { a = rhs[idx]; });
+        x = rhs.x;
+        y = rhs.y;
+        z = rhs.z;
+        w = rhs.w;
+
+        return *this;
     }
 
     auto inline operator*=(auto const& rhs)
@@ -135,7 +144,7 @@ public:
         return for_each([&rhs](T& a, auto idx) { a += rhs[idx]; });
     }
 
-    friend auto inline operator+(auto const& lhs, auto const& rhs)
+    friend auto inline operator+(Vec<N, T> const& lhs, Vec<N, T> const& rhs)
     {
         return Vec<N, T> { lhs } += rhs;
     }
@@ -145,7 +154,7 @@ public:
         return for_each([&rhs](T& a, auto idx) { a -= rhs[idx]; });
     }
 
-    friend auto inline operator-(auto const& lhs, auto const& rhs)
+    friend auto inline operator-(Vec<N, T> const& lhs, Vec<N, T> const& rhs)
     {
         return Vec<N, T> { lhs } -= rhs;
     }
