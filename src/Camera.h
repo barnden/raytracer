@@ -73,9 +73,9 @@ public:
                 auto get_direction = [&]() { return normalize(look_at - m_eye); };
 
                 auto color = compute_ray_color(scene, { look_at = get_look_at(.25, .25), get_direction() }, 0., std::numeric_limits<double>::infinity(), 0)
-                             + compute_ray_color(scene, { look_at = get_look_at(.25, -.25), get_direction() }, 0., std::numeric_limits<double>::infinity(), 0)
-                             + compute_ray_color(scene, { look_at = get_look_at(-.25, -.25), get_direction() }, 0., std::numeric_limits<double>::infinity(), 0)
-                             + compute_ray_color(scene, { look_at = get_look_at(-.25, .25), get_direction() }, 0., std::numeric_limits<double>::infinity(), 0);
+                             + compute_ray_color(scene, { look_at = get_look_at(.25, .75), get_direction() }, 0., std::numeric_limits<double>::infinity(), 0)
+                             + compute_ray_color(scene, { look_at = get_look_at(.75, .25), get_direction() }, 0., std::numeric_limits<double>::infinity(), 0)
+                             + compute_ray_color(scene, { look_at = get_look_at(.75, .75), get_direction() }, 0., std::numeric_limits<double>::infinity(), 0);
 
                 color /= 4.;
 #else
