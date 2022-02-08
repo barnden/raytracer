@@ -64,10 +64,25 @@ public:
     {
         for (auto i = u << 6; i < (u + 1) << 6; i++)
             for (auto j = v << 6; j < (v + 1) << 6; j++) {
+
+#ifdef ENABLE_SSAA
+                auto get_look_at = [&](double a, double b) {
+                    return m_focal_plane_origin + (a + i) * m_pixel_width * m_u + (b + j) * m_pixel_width * m_v;
+                };
+                auto look_at = Vec3 { 0. };
+                auto get_direction = [&]() { return normalize(look_at - m_eye); };
+
+                auto color = compute_ray_color(scene, { look_at = get_look_at(.25, .25), get_direction() }, 0., std::numeric_limits<double>::infinity(), 0)
+                             + compute_ray_color(scene, { look_at = get_look_at(.25, -.25), get_direction() }, 0., std::numeric_limits<double>::infinity(), 0)
+                             + compute_ray_color(scene, { look_at = get_look_at(-.25, -.25), get_direction() }, 0., std::numeric_limits<double>::infinity(), 0)
+                             + compute_ray_color(scene, { look_at = get_look_at(-.25, .25), get_direction() }, 0., std::numeric_limits<double>::infinity(), 0);
+
+                color /= 4.;
+#else
                 auto look_at = m_focal_plane_origin + (.5 + i) * m_pixel_width * m_u + (.5 + j) * m_pixel_width * m_v;
                 auto direction = normalize(look_at - m_eye);
-
                 auto color = compute_ray_color(scene, { look_at, direction }, 0., std::numeric_limits<double>::infinity(), 0);
+#endif
                 auto pixel_idx = (m_viewport_height - (j + 1)) * m_viewport_width + i;
 
                 color.for_each([&](auto& a, auto idx) {
