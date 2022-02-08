@@ -13,6 +13,11 @@
 #    define RAYTRACER_TORUS_EPSILON RAYTRACER_TORUS_THRESHOLD
 #endif
 
+#ifndef RAYTRACER_TORUS_MAXIMUM_SEARCH
+// How many times should we apply Durand-Kerner before trying again with different points
+#    define RAYTRACER_TORUS_MAXIMUM_SEARCH 250'000
+#endif
+
 class Torus : public Shape {
 private:
     Vec3<double> m_center;
@@ -58,22 +63,32 @@ public:
             return x - evaluate_polynomial(x) / ((x - p) * (x - q) * (x - r));
         };
 
-        while (true) {
-            Phat = get_next_point(P, Q, R, S);
-            Qhat = get_next_point(Q, P, R, S);
-            Rhat = get_next_point(R, P, Q, S);
-            Shat = get_next_point(S, P, Q, R);
+        auto running = true;
+        while (running) {
+            for (auto i = 0; i < RAYTRACER_TORUS_MAXIMUM_SEARCH; i++) {
+                Phat = get_next_point(P, Q, R, S);
+                Qhat = get_next_point(Q, P, R, S);
+                Rhat = get_next_point(R, P, Q, S);
+                Shat = get_next_point(S, P, Q, R);
 
-            if (is_within_threshold(Phat, P)
-                && is_within_threshold(Qhat, Q)
-                && is_within_threshold(Rhat, R)
-                && is_within_threshold(Shat, S))
-                break;
+                if (is_within_threshold(Phat, P)
+                    && is_within_threshold(Qhat, Q)
+                    && is_within_threshold(Rhat, R)
+                    && is_within_threshold(Shat, S)) {
+                    running = false;
+                    break;
+                }
 
-            P = Phat;
-            Q = Qhat;
-            R = Rhat;
-            S = Shat;
+                P = Phat;
+                Q = Qhat;
+                R = Rhat;
+                S = Shat;
+            }
+
+            P = std::complex<double>(1.);
+            Q = std::complex<double>(static_cast<double>(rand()) / RAND_MAX, static_cast<double>(rand()) / RAND_MAX);
+            R = Q * Q;
+            S = R * Q;
         }
 
         if (std::abs(Phat.imag()) < RAYTRACER_TORUS_EPSILON)
@@ -109,8 +124,7 @@ public:
             M * (2 * J * K),
             M * (2 * J * L + K * K - G),
             M * (2 * K * L - H),
-            M * (L * L - I)
-        );
+            M * (L * L - I));
 
         return std::min(std::max(root, min), max);
     }
