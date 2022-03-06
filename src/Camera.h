@@ -1,21 +1,10 @@
 #pragma once
 
 #include "Scene.h"
+#include "util/Config.h"
 #include "util/Ray.h"
 #include "util/Record.h"
 #include "util/Vec.h"
-
-#ifndef RAYTRACER_MAX_RECURSION_DEPTH
-#    define RAYTRACER_MAX_RECURSION_DEPTH 8
-#endif
-
-#ifndef RAYTRACER_EPSILON
-#    define RAYTRACER_EPSILON 0.0075
-#endif
-
-#ifndef RAYTRACER_REFLECTIVITY_EPSILON
-#    define RAYTRACER_REFLECTIVITY_EPSILON RAYTRACER_EPSILON
-#endif
 
 class Camera {
 private:
@@ -72,16 +61,16 @@ public:
                 auto look_at = Vec3 { 0. };
                 auto get_direction = [&]() { return normalize(look_at - m_eye); };
 
-                auto color = compute_ray_color(scene, { look_at = get_look_at(.25, .25), get_direction() }, 0., std::numeric_limits<double>::infinity(), 0)
-                             + compute_ray_color(scene, { look_at = get_look_at(.25, .75), get_direction() }, 0., std::numeric_limits<double>::infinity(), 0)
-                             + compute_ray_color(scene, { look_at = get_look_at(.75, .25), get_direction() }, 0., std::numeric_limits<double>::infinity(), 0)
-                             + compute_ray_color(scene, { look_at = get_look_at(.75, .75), get_direction() }, 0., std::numeric_limits<double>::infinity(), 0);
+                auto color = scene.compute_ray_color({ look_at = get_look_at(.25, .25), get_direction() }, 0., std::numeric_limits<double>::infinity(), 0)
+                             + scene.compute_ray_color({ look_at = get_look_at(.25, .75), get_direction() }, 0., std::numeric_limits<double>::infinity(), 0)
+                             + scene.compute_ray_color({ look_at = get_look_at(.75, .25), get_direction() }, 0., std::numeric_limits<double>::infinity(), 0)
+                             + scene.compute_ray_color({ look_at = get_look_at(.75, .75), get_direction() }, 0., std::numeric_limits<double>::infinity(), 0);
 
                 color /= 4.;
 #else
                 auto look_at = m_focal_plane_origin + (.5 + i) * m_pixel_width * m_u + (.5 + j) * m_pixel_width * m_v;
                 auto direction = normalize(look_at - m_eye);
-                auto color = compute_ray_color(scene, { look_at, direction }, 0., std::numeric_limits<double>::infinity(), 0);
+                auto color = scene.compute_ray_color({ look_at, direction }, 0., std::numeric_limits<double>::infinity(), 0);
 #endif
                 auto pixel_idx = (m_viewport_height - (j + 1)) * m_viewport_width + i;
 
@@ -100,54 +89,5 @@ public:
                 render_chunk(scene, u, v, pixels);
 
         return pixels;
-    }
-
-    __attribute__((flatten)) Vec3<double> compute_ray_color(Scene const& scene, Ray ray, double min, double max, int depth) const
-    {
-        auto record = Record {};
-
-        if (depth == RAYTRACER_MAX_RECURSION_DEPTH || !scene.find_intersection(ray, min, max, record))
-            return { 0. };
-
-        auto color = record.m_material.ka;
-        auto E = normalize(ray.get_origin() - record.m_point);
-
-        for (auto&& light : scene.get_lights()) {
-            auto light_direction = light->m_position - record.m_point;
-            auto light_time = light_direction.magnitude();
-
-            light_direction.normalize();
-
-            auto shadow_ray = Ray(record.m_point, light_direction);
-            auto shadow_record = Record {};
-
-            // There is an occluder between light and this point; continue to next light source.
-            if (scene.find_intersection(shadow_ray, RAYTRACER_EPSILON, light_time, shadow_record))
-                continue;
-
-            // Phong reflection model for lighting
-            auto LN = dot(light_direction, record.m_normal);
-            auto R = normalize((2. * LN * record.m_normal) - light_direction);
-
-            auto diffuse = std::max(0., LN) * record.m_material.kd;
-            auto specular = std::pow(std::max(0., dot(R, E)), record.m_material.s) * record.m_material.ks;
-
-            color += light->m_color * (diffuse + specular);
-        }
-
-        // Reflectivity of the object is so low that it is not worth rendering
-        if (dot(record.m_material.km, record.m_material.km) <= RAYTRACER_REFLECTIVITY_EPSILON)
-            return color;
-
-        // Reflection ray originates from point of intersection of ray and object
-        auto reflection_ray = Ray(record.m_point, normalize(ray.get_direction() - 2. * dot(ray.get_direction(), record.m_normal) * record.m_normal));
-        auto reflected_color = record.m_material.km * compute_ray_color(scene, reflection_ray, RAYTRACER_EPSILON, std::numeric_limits<double>::infinity(), depth + 1);
-
-        // Add color and reflected color; clamp to values between [0, 1].
-        color.for_each([&reflected_color](auto& v, auto idx) {
-            v = std::min(1., v + reflected_color[idx]);
-        });
-
-        return color;
     }
 };
