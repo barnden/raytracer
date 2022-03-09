@@ -37,9 +37,9 @@ public:
         , m_viewport_width(width)
         , m_viewport_height(height)
     {
-        m_w = normalize(eye - look_at);
-        m_u = normalize(cross(up, m_w));
-        m_v = cross(m_w, m_u);
+        m_w = normalize(look_at - eye);
+        m_u = normalize(cross(m_w, up));
+        m_v = cross(m_u, m_w);
 
         m_focal_plane_height = 2 * focal_distance * tan(fov_y / 360. * M_PI);
         m_pixel_width = m_focal_plane_height / height;
