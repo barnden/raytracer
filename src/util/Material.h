@@ -8,5 +8,6 @@ struct Material {
     Vec3<double> ks; // Specular
     Vec3<double> km; // Reflectivity
 
-    double s; // Specular exponent
+    double m; // Roughness (rms slope of microfacets)
+    double ior;
 };
