@@ -28,6 +28,11 @@ private:
     double m_focal_plane_width;
     double m_pixel_width;
 
+    std::vector<Vec3<uint8_t>> m_pixels;
+
+    std::mutex m_mutex;
+    std::unique_lock<std::mutex> m_lock;
+
 public:
     Camera(auto eye, auto look_at, auto up, auto fov_y, auto focal_distance, auto width, auto height)
         : m_eye(eye)
@@ -36,6 +41,7 @@ public:
         , m_focal_distance(focal_distance)
         , m_viewport_width(width)
         , m_viewport_height(height)
+        , m_pixels(m_viewport_width * m_viewport_height, Vec3<uint8_t> { 0 })
     {
         m_w = normalize(look_at - eye);
         m_u = normalize(cross(m_w, up));
@@ -49,7 +55,7 @@ public:
         m_focal_plane_origin = m_focal_plane_center - (((m_focal_plane_width / 2.) * m_u) + ((m_focal_plane_height / 2.) * m_v));
     }
 
-    __attribute__((flatten)) void render_chunk(Scene const& scene, std::size_t u, std::size_t v, auto& pixels) const
+    __attribute__((flatten)) void render_chunk(Scene const& scene, std::size_t u, std::size_t v, auto& pixels)
     {
         for (auto i = u << 6; i < (u + 1) << 6; i++)
             for (auto j = v << 6; j < (v + 1) << 6; j++) {
@@ -80,14 +86,12 @@ public:
             }
     }
 
-    __attribute__((flatten)) auto render(Scene const& scene) const
+    __attribute__((flatten)) auto render(Scene const& scene)
     {
-        std::vector<Vec3<uint8_t>> pixels(m_viewport_width * m_viewport_height, Vec3<uint8_t> { 0 });
-
         for (auto u = 0uz; u < (m_viewport_width >> 6); u++)
             for (auto v = 0uz; v < (m_viewport_height >> 6); v++)
-                render_chunk(scene, u, v, pixels);
+                render_chunk(scene, u, v, m_pixels);
 
-        return pixels;
+        return m_pixels;
     }
 };
