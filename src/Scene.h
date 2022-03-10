@@ -86,10 +86,20 @@ public:
                 continue;
 
             auto LN = dot(light_direction, record.m_normal);
-            auto R = normalize((2. * LN * record.m_normal) - light_direction);
 
             auto diffuse = std::max(0., LN) * record.m_material.kd;
-            auto specular = std::pow(std::max(0., dot(R, E)), record.m_material.s) * record.m_material.ks;
+            auto specular = Vec3<double> { 0. };
+
+            // Don't compute specular component if specular reflection is negligible
+            if (dot(record.m_material.ks, record.m_material.ks) > RAYTRACER_EPSILON)
+                specular = Raytracer::specular(
+                               light_direction,
+                               record.m_normal,
+                               E,
+                               1.,
+                               record.m_material.ior,
+                               record.m_material.m)
+                           * record.m_material.ks;
 
             color += light->m_color * (record.m_material.ka + diffuse + specular);
         }
