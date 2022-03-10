@@ -35,15 +35,25 @@ int main(int argc, char** argv)
     scene.add_light(std::make_shared<Light>(Vec3 { 0., 3., -2. }, Vec3 { .2 }));
     scene.add_light(std::make_shared<Light>(Vec3 { -2., 1., 4. }, Vec3 { .5 }));
 
+    auto generic_diffuse = Material {
+        Vec3 { .1 },
+        Vec3 { 1. },
+        Vec3 { 0. },
+        Vec3 { 0. },
+        1.,
+        2.5
+    };
+
     scene.add_shape(std::make_shared<Sphere>(
         Vec3 { -1., -.7, 3. },
         .3,
-        Material(
+        Material {
             Vec3 { .1 },
             Vec3 { .3, .6, .3 },
             Vec3 { 1. },
             Vec3 { .1, .4, .1 },
-            100.)));
+            0.135,
+            2.5 }));
 
     scene.add_shape(std::make_shared<Sphere>(
         Vec3 { 1., -.5, 3. },
@@ -53,7 +63,8 @@ int main(int argc, char** argv)
             Vec3 { 1., .0, 0. },
             Vec3 { 1. },
             Vec3 { 0. },
-            10. }));
+            0.2,
+            2.5 }));
 
     scene.add_shape(std::make_shared<Sphere>(
         Vec3 { -1., 0., 0. },
@@ -63,7 +74,8 @@ int main(int argc, char** argv)
             Vec3 { 0. },
             Vec3 { 0. },
             Vec3 { 1. },
-            0. }));
+            1.,
+            1. }));
 
     scene.add_shape(std::make_shared<Sphere>(
         Vec3 { 1., 0., -1. },
@@ -73,27 +85,18 @@ int main(int argc, char** argv)
             Vec3 { 0. },
             Vec3 { 0. },
             Vec3 { 1. },
-            0. }));
+            1.,
+            1. }));
 
     scene.add_shape(std::make_shared<Plane>(
         Vec3 { -1., -3., 0. },
         Vec3 { 0., 1., 0. },
-        Material {
-            Vec3 { .1 },
-            Vec3 { 1. },
-            Vec3 { 0. },
-            Vec3 { 0. },
-            0. }));
+        generic_diffuse));
 
     scene.add_shape(std::make_shared<Plane>(
         Vec3 { 0., 0., -3. },
         Vec3 { 1., 0., 1. },
-        Material {
-            Vec3 { .1 },
-            Vec3 { 1. },
-            Vec3 { 0. },
-            Vec3 { 0. },
-            0. }));
+        generic_diffuse));
 
     scene.add_shape(std::make_shared<Triangle>(
         Vec3 { 2., 0., -1. },
@@ -104,7 +107,8 @@ int main(int argc, char** argv)
             Vec3 { .2, .2, 1. },
             Vec3 { 1. },
             Vec3 { 0. },
-            100. }));
+            0.75,
+            2.5 }));
 
     scene.add_shape(std::make_shared<Torus>(
         Vec3 { -1., -.7, 3. },
