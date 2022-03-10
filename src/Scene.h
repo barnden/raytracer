@@ -6,6 +6,7 @@
 #include "shapes/Shape.h"
 #include "util/Config.h"
 #include "util/Light.h"
+#include "util/Lighting.h"
 #include "util/Ray.h"
 #include "util/Record.h"
 #include "util/Vec.h"
@@ -68,7 +69,7 @@ public:
         if (depth == RAYTRACER_MAX_RECURSION_DEPTH || !find_intersection(ray, min, max, record))
             return Vec3<double> { 0. };
 
-        auto color = record.m_material.ka;
+        auto color = Vec3<double> { 0. };
         auto E = normalize(ray.get_origin() - record.m_point);
 
         for (auto&& light : m_lights) {
@@ -90,7 +91,7 @@ public:
             auto diffuse = std::max(0., LN) * record.m_material.kd;
             auto specular = std::pow(std::max(0., dot(R, E)), record.m_material.s) * record.m_material.ks;
 
-            color += light->m_color * (diffuse + specular);
+            color += light->m_color * (record.m_material.ka + diffuse + specular);
         }
 
         auto reflection_ray = Ray(record.m_point, normalize(ray.get_direction() - 2. * dot(ray.get_direction(), record.m_normal) * record.m_normal));
