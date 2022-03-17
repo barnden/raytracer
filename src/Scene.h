@@ -73,7 +73,7 @@ public:
         auto E = normalize(ray.get_origin() - record.m_point);
 
         for (auto&& light : m_lights) {
-            auto light_direction = normalize(light->m_position - record.m_point);
+            auto light_direction = light->m_position - record.m_point;
             auto light_time = light_direction.magnitude();
 
             light_direction.normalize();
