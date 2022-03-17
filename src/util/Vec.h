@@ -191,12 +191,16 @@ public:
 
     __attribute__((flatten)) friend std::ostream& operator<<(std::ostream& stream, Vec<N, T> const& vec)
     {
+        stream << "<";
+
         vec.for_each_const([&](T const& val, auto idx) {
             if (idx > 0)
                 stream << ", ";
 
             stream << val;
         });
+
+        stream << ">";
 
         return stream;
     }
